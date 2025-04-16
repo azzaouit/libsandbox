@@ -1,0 +1,21 @@
+libsandbox
+----------
+
+Simple Linux sandbox using
+
+* seccomp: Restrict system calls.
+* Namespaces: Isolate processes, network, filesystem, etc.
+* cgroups: Limit CPU, memory, and I/O.
+* Capabilities: Drop unnecessary privileges.
+* Filesystem Isolation: Use chroot or mount namespaces.
+
+Dependencies
+------------
+
+libseccomp
+
+Build
+-----
+
+make
+sudo make install
