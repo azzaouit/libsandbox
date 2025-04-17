@@ -18,97 +18,73 @@
 #define CGROUP_SWAP_MAX "/memory.swap.max"
 #define CGROUP_PROCS "/cgroup.procs"
 
+#define CGROUP_WRITE_FILE(B, P, ...)                                           \
+  do {                                                                         \
+    char path[PATH_MAX];                                                       \
+    if (snprintf(path, PATH_MAX, "%s%s", B, P) < 0) {                          \
+      perror("snprintf failed");                                               \
+      return errno;                                                            \
+    }                                                                          \
+    FILE *f = fopen(path, "w");                                                \
+    if (!f) {                                                                  \
+      perror("fopen failed");                                                  \
+      return errno;                                                            \
+    }                                                                          \
+    fprintf(f, __VA_ARGS__);                                                   \
+    fclose(f);                                                                 \
+  } while (0)
+
 int cgroup_set_cpu_max(struct cgroup_cfg *c) {
-  char path[PATH_MAX];
-  if (snprintf(path, PATH_MAX, "%s%s", c->path, CGROUP_CPU_MAX) < 0) {
-    perror("snprintf failed");
-    return errno;
-  }
-
-  FILE *cpu_file = fopen(path, "w");
-  if (!cpu_file) {
-    perror("fopen cpu.max failed");
-    return errno;
-  }
-
 #ifdef CGROUP_DEBUG
   SANDBOX_LOG("Setting cgroup cpu max quota %lu %lu\n", c->cpu_max_quota,
               c->cpu_max_period);
 #endif
-
-  fprintf(cpu_file, "%lu %lu\n", c->cpu_max_quota, c->cpu_max_period);
-  fclose(cpu_file);
-
+  CGROUP_WRITE_FILE(c->path, CGROUP_CPU_MAX, "%lu %lu\n", c->cpu_max_quota,
+                    c->cpu_max_period);
   return 0;
 }
 
 int cgroup_set_mem_max(struct cgroup_cfg *c) {
-  char path[PATH_MAX];
-  if (snprintf(path, PATH_MAX, "%s%s", c->path, CGROUP_MEM_MAX) < 0) {
-    perror("snprintf failed");
-    return 0;
-  }
-
 #ifdef CGROUP_DEBUG
   SANDBOX_LOG("Setting cgroup mem max %ld\n", c->mem_max);
 #endif
-
-  FILE *mem_file = fopen(path, "w");
-  if (!mem_file) {
-    perror("fopen memory.max failed");
-    return errno;
-  }
-
-  fprintf(mem_file, "%lu\n", c->mem_max);
-  fclose(mem_file);
-
+  CGROUP_WRITE_FILE(c->path, CGROUP_MEM_MAX, "%lu\n", c->mem_max);
   return 0;
 }
 
 int cgroup_set_swap_max(struct cgroup_cfg *c) {
-  char path[PATH_MAX];
-  if (snprintf(path, PATH_MAX, "%s%s", c->path, CGROUP_SWAP_MAX) < 0) {
-    perror("snprintf failed");
-    return errno;
-  }
-
 #ifdef CGROUP_DEBUG
   SANDBOX_LOG("Setting cgroup swap max %ld\n", c->mem_swap_max);
 #endif
-
-  FILE *swap_file = fopen(path, "w");
-  if (!swap_file) {
-    perror("fopen memory.swap.max failed");
-    return errno;
-  }
-
-  fprintf(swap_file, "%lu\n", c->mem_swap_max);
-  fclose(swap_file);
-
+  CGROUP_WRITE_FILE(c->path, CGROUP_SWAP_MAX, "%lu\n", c->mem_swap_max);
   return 0;
 }
 
 int add_to_cgroup(pid_t pid, struct cgroup_cfg *c) {
-  char path[PATH_MAX];
-  if (snprintf(path, PATH_MAX, "%s%s", c->path, CGROUP_PROCS) < 0) {
-    perror("snprintf failed");
-    return errno;
-  }
-
 #ifdef CGROUP_DEBUG
   SANDBOX_LOG("Adding pid %d to cgroup %s\n", pid, c->path);
 #endif
+  CGROUP_WRITE_FILE(c->path, CGROUP_PROCS, "%d\n", pid);
+  return 0;
+}
 
-  FILE *procs_file = fopen(path, "w");
-  if (!procs_file) {
-    perror("fopen cgroup.procs failed");
+int gen_uuid(char *uuid_str) {
+  unsigned char bytes[16];
+
+  if (getrandom(bytes, sizeof(bytes), 0) != sizeof(bytes)) {
+    SANDBOX_LOG("Failed to get random bytes\n");
     return errno;
   }
 
-  fprintf(procs_file, "%d\n", pid);
-  fclose(procs_file);
+  bytes[6] = (bytes[6] & 0x0F) | 0x40;
+  bytes[8] = (bytes[8] & 0x3F) | 0x80;
 
-  return 0;
+  return snprintf(uuid_str, 37,
+                  "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%"
+                  "02x%02x%02x",
+                  bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5],
+                  bytes[6], bytes[7], bytes[8], bytes[9], bytes[10], bytes[11],
+                  bytes[12], bytes[13], bytes[14], bytes[15]) < 0;
 }
 
 int cgroup_init(struct cgroup_cfg *c) {
