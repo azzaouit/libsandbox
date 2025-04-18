@@ -12,7 +12,7 @@ struct cgroup_cfg {
 };
 
 // Create cgroup directory and set resource limits
-int cgroup_init(struct cgroup_cfg *c);
+int cgroup_init(struct cgroup_cfg *c, const char *uuid);
 
 // Add process to cgroup
 int add_to_cgroup(pid_t pid, struct cgroup_cfg *c);

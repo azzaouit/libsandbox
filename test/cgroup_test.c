@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "sandbox.h"
+#include "cgroup.h"
 
 #define STACK_SIZE (1024 * 1024)
 
@@ -27,7 +27,7 @@ int main() {
   };
 
   // Init cgroup context
-  assert(!cgroup_init(&c));
+  assert(!cgroup_init(&c, "test"));
 
   // Clone child process
   char *stack = malloc(STACK_SIZE);

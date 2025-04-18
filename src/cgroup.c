@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/random.h>
+
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -68,33 +68,8 @@ int add_to_cgroup(pid_t pid, struct cgroup_cfg *c) {
   return 0;
 }
 
-int gen_uuid(char *uuid_str) {
-  unsigned char bytes[16];
-
-  if (getrandom(bytes, sizeof(bytes), 0) != sizeof(bytes)) {
-    SANDBOX_LOG("Failed to get random bytes\n");
-    return errno;
-  }
-
-  bytes[6] = (bytes[6] & 0x0F) | 0x40;
-  bytes[8] = (bytes[8] & 0x3F) | 0x80;
-
-  return snprintf(uuid_str, 37,
-                  "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%"
-                  "02x%02x%02x",
-                  bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5],
-                  bytes[6], bytes[7], bytes[8], bytes[9], bytes[10], bytes[11],
-                  bytes[12], bytes[13], bytes[14], bytes[15]) < 0;
-}
-
-int cgroup_init(struct cgroup_cfg *c) {
+int cgroup_init(struct cgroup_cfg *c, const char *uuid) {
   int ret = 0;
-  char uuid[37];
-
-  if ((ret = gen_uuid(uuid))) {
-    SANDBOX_LOG("Failed to generate uuid\n");
-    return ret;
-  }
 
   if (snprintf(c->path, PATH_MAX, "%s%s", CGROUP_DIR, uuid) < 0) {
     perror("snprintf failed");
@@ -108,13 +83,13 @@ int cgroup_init(struct cgroup_cfg *c) {
   if (mkdir(c->path, CGROUP_DEFAULT_PERMS) < 0)
     return errno;
 
-  if ((ret = cgroup_set_cpu_max(c)))
+  if ((c->cpu_max_quota || c->cpu_max_period) && (ret = cgroup_set_cpu_max(c)))
     goto err;
 
-  if ((ret = cgroup_set_mem_max(c)))
+  if (c->mem_max && (ret = cgroup_set_mem_max(c)))
     goto err;
 
-  if ((ret = cgroup_set_swap_max(c)))
+  if (c->mem_swap_max && (ret = cgroup_set_swap_max(c)))
     goto err;
 
   return 0;

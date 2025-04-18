@@ -9,16 +9,6 @@
 #include "scmp.h"
 
 #define STACK_SIZE (1024 * 1024)
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-// Minimal allowlist for an icmp echo
-static struct scmp_rule ping_rules[] = {
-    {"socket", SCMP_ACT_ALLOW, {}}, {"sendto", SCMP_ACT_ALLOW, {}},
-    {"write", SCMP_ACT_ALLOW, {}},  {"close", SCMP_ACT_ALLOW, {}},
-    {"dup", SCMP_ACT_ALLOW, {}},    {"fcntl", SCMP_ACT_ALLOW, {}},
-    {"fstat", SCMP_ACT_ALLOW, {}},  {"exit_group", SCMP_ACT_ALLOW, {}},
-    {"getpid", SCMP_ACT_ALLOW, {}}, {"exit", SCMP_ACT_ALLOW, {}},
-};
 
 int sandboxed_ping() {
   char dest_ip[] = "8.8.8.8";
