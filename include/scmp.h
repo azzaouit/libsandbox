@@ -46,7 +46,7 @@ static struct scmp_rule net_rules[] __attribute__((unused)) = {
     {"sendto", SCMP_ACT_ALLOW, {}}, {"recvfrom", SCMP_ACT_ALLOW, {}}};
 
 // Apply an allowlist
-int scmp_apply_rules(const struct scmp_rule *r, size_t n);
+int scmp_apply_rules(const struct scmp_rule *const r, size_t nrules);
 
 // Apply an allowlist
 void scmp_setup_signal_handler();

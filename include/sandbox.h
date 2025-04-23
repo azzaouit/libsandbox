@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 
 #include "cgroup.h"
+#include "fs.h"
 #include "scmp.h"
 #include "utils.h"
 
@@ -26,6 +27,8 @@ struct sandbox {
   struct scmp_rule *r;
   /* Number of seccomp filters */
   size_t nrules;
+  /* File system config */
+  struct fs_cfg f;
   /* Sandbox entry point. Can be used to execv some process. */
   sandboxed_func_t f_entry;
 };
@@ -53,6 +56,16 @@ static int sandbox_child(void *a) {
   int ret;
   struct sandbox *s = (struct sandbox *)a;
   SANDBOX_LOG("Child PID: %d\n", getpid());
+
+  /* Setup and pivot into rootfs */
+  if ((ret = fs_init(&s->f))) {
+    SANDBOX_LOG("Failed to init file system\n");
+    return ret;
+  }
+  if ((ret = fs_proot(&s->f))) {
+    SANDBOX_LOG("Failed to pivot into file system\n");
+    return ret;
+  }
 
   /* Setup seccomp filters (if any) */
   if (s->r && s->nrules) {
@@ -102,6 +115,7 @@ static int sandbox(struct sandbox *s) {
   waitpid(child_pid, NULL, 0);
 
   cgroup_remove(&s->c);
+  fs_remove(&s->f);
   free(stack);
   return 0;
 }

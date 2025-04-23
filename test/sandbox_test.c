@@ -23,15 +23,19 @@ static int sandboxed_ping() {
 
 int main() {
   (void)ping_rules;
-  struct sandbox s = {.uuid = {},
-                      .stack_size = STACK_SIZE,
-                      .c.cpu_max_quota = 100000,
-                      .c.cpu_max_period = 100000,
-                      .c.mem_max = 100000000,
-                      .c.mem_swap_max = 0,
-                      .r = ping_rules,
-                      .nrules = ARRAY_SIZE(ping_rules),
-                      .f_entry = sandboxed_ping};
+  struct sandbox s = {
+      .uuid = {},
+      .stack_size = STACK_SIZE,
+      .c.cpu_max_quota = 100000,
+      .c.cpu_max_period = 100000,
+      .c.mem_max = 100000000,
+      .c.mem_swap_max = 0,
+      .r = ping_rules,
+      .nrules = ARRAY_SIZE(ping_rules),
+      .f_entry = sandboxed_ping,
+      .f.root_dir = "/mnt/sandbox",
+      .f.bind_mounts = NULL,
+  };
 
   assert(!sandbox(&s));
 

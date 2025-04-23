@@ -22,8 +22,7 @@ static struct scmp_rule ping_rules[] = {
     {"write", SCMP_ACT_ALLOW, {}},  {"close", SCMP_ACT_ALLOW, {}},
     {"dup", SCMP_ACT_ALLOW, {}},    {"fcntl", SCMP_ACT_ALLOW, {}},
     {"fstat", SCMP_ACT_ALLOW, {}},  {"exit_group", SCMP_ACT_ALLOW, {}},
-    {"getpid", SCMP_ACT_ALLOW, {}}, {"exit", SCMP_ACT_ALLOW, {}},
-};
+    {"getpid", SCMP_ACT_ALLOW, {}}, {"exit", SCMP_ACT_ALLOW, {}}};
 
 struct icmp_packet {
   struct icmphdr header;

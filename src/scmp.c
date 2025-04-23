@@ -8,7 +8,7 @@
 #include "scmp.h"
 #include "utils.h"
 
-int scmp_apply_rules(const struct scmp_rule *r, size_t n) {
+int scmp_apply_rules(const struct scmp_rule *const r, size_t n) {
   scmp_filter_ctx ctx = seccomp_init(SCMP_ACT_TRAP);
   if (!ctx) {
     perror("seccomp_init failed");
@@ -28,19 +28,19 @@ int scmp_apply_rules(const struct scmp_rule *r, size_t n) {
 
     // Build argument filters
     struct scmp_arg_cmp filters[3] = {0};
-    size_t fc = 0;
-    for (fc = 0; fc < 3; ++fc) {
-      if (r[i].args[fc].op == 0)
+    size_t j = 0;
+    for (j = 0; j < 3; ++j) {
+      if (r->args[j].op == 0)
         break; // No more filters
-      filters[fc].arg = r[i].args[fc].arg;
-      filters[fc].op = r[i].args[fc].op;
-      filters[fc].datum_a = r[i].args[fc].a;
-      filters[fc].datum_b = r[i].args[fc].b;
+      filters[j].arg = r[i].args[j].arg;
+      filters[j].op = r[i].args[j].op;
+      filters[j].datum_a = r[i].args[j].a;
+      filters[j].datum_b = r[i].args[j].b;
     }
 
-    int rc = seccomp_rule_add_array(ctx, r[i].action, nr, fc, filters);
+    int rc = seccomp_rule_add_array(ctx, r->action, nr, j, filters);
     if (rc < 0) {
-      SANDBOX_LOG("Failed to add %s rule: %s\n", r[i].name, strerror(-rc));
+      SANDBOX_LOG("Failed to add %s rule: %s\n", r->name, strerror(-rc));
       return rc;
     }
   }
